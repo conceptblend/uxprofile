@@ -60,7 +60,7 @@ let data = {
     },
     {
       name: 'Alex',
-      excludeFromAggregate: true,
+      excludeFromAggregate: false,
       values: [
         {
           label: 'IxD',
@@ -186,6 +186,8 @@ class ProfileGraph {
     // Scale all drawing operations by the dpr, so you
     // don't have to worry about the difference.
     ctx.scale(dpr, dpr);
+    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     return ctx;
   }
 
@@ -288,6 +290,7 @@ class ProfileGraph {
   }
 
   drawDimensions() {
+
     let n = this.dimensions.length;
     for (var i = 0; i < n; i++) {
       var pt = this.calcChartPointForDimension(
