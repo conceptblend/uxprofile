@@ -1,8 +1,12 @@
-html, body {
-    margin: 0;
-    padding: 0;
-  }
-  canvas {
-    display: block;
-  }
-  
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+main {
+  margin: 20px;
+}
+canvas {
+  display: block;
+  margin: 0 auto;
+}
