@@ -5,8 +5,13 @@ body {
 }
 main {
   margin: 20px;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
 }
 canvas {
   display: block;
-  margin: 0 auto;
+  margin: 0 20px 20px;
+  width: 400px;
+  height: 400px;
 }

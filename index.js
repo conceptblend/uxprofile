@@ -5,7 +5,7 @@ let data = {
   },
   meta: {
     title: 'UX Discipline Profile',
-    dimensions: 'IxD,R:G,IA,R:E,u7y,a11y,UI,UxW,CS,AX,FED'.split(','),
+    dimensions: 'IxD,u7y,UI,IA,UxW,R:G,R:E,CS,AX,a11y,FED'.split(','),
   },
   profiles: [
     {
@@ -14,6 +14,10 @@ let data = {
         {
           label: 'IxD',
           value: 4,
+        },
+        {
+          label: 'FED',
+          value: 2,
         },
         {
           label: 'R:E',
@@ -148,53 +152,34 @@ let data = {
   ],
 };
 
-function setup() {
-  createCanvas(400, 400);
-  angleMode(DEGREES);
-  textSize(14);
-  strokeCap(SQUARE);
-  strokeJoin(ROUND);
-  noLoop();
-}
-
-function draw() {
-  background(255);
-
-  let pg = new ProfileGraph(
-    data.meta.dimensions,
-    { x: width / 2, y: height / 2 },
-    data.range
-  );
-
-  // Draw and label lines out from the center as the base
-
-  pg.drawDimensions();
-
-  for (var n = 0, len = data.profiles.length; n < len; n++) {
-    // Describe the look of the polygon
-    noStroke();
-    // stroke(255);
-    fill('rgba(0, 255, 128, .5)');
-    pg.drawChartPolygon(data.profiles[n].values);
-
-  }
-
-  // Draw lines out from the center
-  for (var n = 0, len = data.profiles.length; n < len; n++) {
-    stroke(0);
-    strokeWeight(5);
-    pg.drawChartDimensionValues(data.profiles[n].values);
-  }
-}
-
 class ProfileGraph {
-  constructor(dimensions, center, range) {
+  constructor(dimensions, center, range, parent) {
     this.dimensions = dimensions; // [ ]: string
     this.angle = 360 / dimensions.length;
     this.center = center; // { x: x', y: y' }
     this.range = range; // { min: n, max: m }
+    this.ctx = this.setupCanvas(parent);
 
     this.getDimensionIndexFromLabel = (label) => this.dimensions.indexOf(label);
+  }
+
+  setupCanvas(parent) {
+    let canvas = document.createElement('canvas');
+    (parent || document).appendChild(canvas);
+
+    // Get the device pixel ratio, falling back to 1.
+    var dpr = window.devicePixelRatio || 1;
+    // Get the size of the canvas in CSS pixels.
+    var rect = canvas.getBoundingClientRect();
+    // Give the canvas pixel dimensions of their CSS
+    // size * the device pixel ratio.
+    canvas.width = rect.width * dpr;
+    canvas.height = rect.height * dpr;
+    var ctx = canvas.getContext('2d');
+    // Scale all drawing operations by the dpr, so you
+    // don't have to worry about the difference.
+    ctx.scale(dpr, dpr);
+    return ctx;
   }
 
   drawChartPolygon(_vals) {
@@ -227,50 +212,67 @@ class ProfileGraph {
     // });
 
     // Draw the polygon
-    beginShape();
+    this.ctx.beginPath();
     for (var i = 0, len = vals.length; i < len; i++) {
       var pt = this.calcChartPointForDimension(
         40,
         vals[i].value,
         vals[i].label
       );
-      vertex(this.center.x + pt.x, this.center.y + pt.y);
+      if (i == 0) {
+        this.ctx.moveTo(this.center.x + pt.x, this.center.y + pt.y);
+      } else {
+        this.ctx.lineTo(this.center.x + pt.x, this.center.y + pt.y);
+      }
     }
-    endShape(CLOSE);
+    this.ctx.closePath();
+    this.ctx.fillStyle = "rgb(128, 255, 149)"
+    this.ctx.fill();
+
+    // this.ctx.lineJoin = "round";
+    // this.ctx.strokeStyle = "rgb(0, 255, 0)";
+    // this.ctx.lineWidth = 4;
+    // this.ctx.stroke();
   }
 
   drawChartDimensionValues(vals) {
+    this.ctx.beginPath();
     for (var i = 0, len = vals.length; i < len; i++) {
       var pt = this.calcChartPointForDimension(
         40,
         vals[i].value,
         vals[i].label
       );
-
-      stroke(2);
-      line(
+      this.ctx.moveTo(
         this.center.x,
-        this.center.y,
+        this.center.y
+      );
+      this.ctx.lineTo(
         this.center.x + pt.x,
         this.center.y + pt.y
       );
     }
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeStyle = "rgb(0,0,0)";
+    this.ctx.stroke()
   }
 
   calcChartPointForDimension(magnitude, value, label) {
     let i = this.getDimensionIndexFromLabel(label);
     let length = magnitude * value;
-    let theta = -90 + this.angle * i;
+    let theta = ((-90 + this.angle * i) * Math.PI) / 180;
     return {
-      x: length * cos(theta),
-      y: length * sin(theta),
+      x: length * Math.cos(theta),
+      y: length * Math.sin(theta),
     };
   }
+
   getLabelPosition(label) {
     let pt = this.calcChartPointForDimension(45, this.range.max, label);
+    let txt = this.ctx.measureText(label);
     return {
-      x: pt.x - textWidth(label) / 2,
-      y: pt.y + textSize() / 2,
+      x: pt.x - txt.width / 2,
+      y: pt.y + 14 / 2,
     };
   }
 
@@ -283,18 +285,88 @@ class ProfileGraph {
         this.dimensions[i]
       );
 
-      strokeWeight(2);
-      stroke(192);
-      line(
-        this.center.x,
-        this.center.y,
-        this.center.x + pt.x,
-        this.center.y + pt.y
-      );
-      noStroke();
-      fill(32);
+      this.ctx.moveTo(this.center.x, this.center.y);
+      this.ctx.lineTo(this.center.x + pt.x, this.center.y + pt.y);
+
+      this.ctx.lineWidth = 2;
+      this.ctx.strokeStyle = 'rgb(236,236,236)';
+      this.ctx.stroke();
+
       var pos = this.getLabelPosition(this.dimensions[i]);
-      text(this.dimensions[i], this.center.x + pos.x, this.center.y + pos.y);
+      this.ctx.fillStyle = 'rgb(32,32,32)';
+      this.ctx.font = '14px sans-serif';
+      this.ctx.fillText(
+        this.dimensions[i],
+        this.center.x + pos.x,
+        this.center.y + pos.y
+      );
     }
   }
 }
+
+function draw(parent) {
+  let w = 400, h = 400;
+
+  /**
+   * Draw the BLENDED version that merges all profiles
+   */
+  let pg = new ProfileGraph(
+    data.meta.dimensions,
+    { x: w / 2, y: h / 2 },
+    data.range,
+    parent
+  );
+
+  // Create a consolidated dataset.
+  var consolidatedProfile = [];
+  var maximums = {};
+  var temp = [];
+  for (var n = 0, len = data.profiles.length; n < len; n++) {
+    temp = [...temp, ...data.profiles[n].values];
+  }
+  temp.forEach(function(i) {
+    if (maximums[i.label] !== undefined) {
+      maximums[i.label] = Math.max(maximums[i.label], i.value);
+    } else {
+      maximums[i.label] = i.value;
+    }
+  })
+  for (var prop in maximums) {
+    consolidatedProfile.push({ label: prop, value: maximums[prop]});
+  } 
+
+  // Draw and label lines out from the center as the base
+  pg.drawDimensions();
+
+  // Describe the look of the polygon
+  pg.drawChartPolygon(consolidatedProfile);
+
+  // Draw lines out from the center
+  pg.drawChartDimensionValues(consolidatedProfile);
+
+  // Draw each of the profiles separately.
+  for (var n = 0, len = data.profiles.length; n < len; n++) {
+    var pgi = new ProfileGraph(
+      data.meta.dimensions,
+      { x: w / 2, y: h / 2 },
+      data.range,
+      parent
+    );
+  
+    // Draw and label lines out from the center as the base
+    pgi.drawDimensions();
+
+    // Draw the profile polygon
+    pgi.drawChartPolygon(data.profiles[n].values);
+  
+    // Draw lines out from the center
+    pgi.drawChartDimensionValues(data.profiles[n].values);
+  }
+}
+
+window.onload = function (e) {
+  // let canvas = document.getElementById('cnvs-main');
+  // let ctx = setupCanvas(canvas);
+
+  draw(document.getElementById('main'));
+};
