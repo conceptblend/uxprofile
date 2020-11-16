@@ -9,7 +9,58 @@ let data = {
   },
   profiles: [
     {
-      name: 'Interaction Designer',
+      name: 'Target',
+      excludeFromAggregate: true,
+      values: [
+        {
+          label: 'IxD',
+          value: 4,
+        },
+        {
+          label: 'R:E',
+          value: 3,
+        },
+        {
+          label: 'UI',
+          value: 2,
+        },
+        {
+          label: 'AX',
+          value: 1,
+        },
+        {
+          label: 'IA',
+          value: 3,
+        },
+        {
+          label: 'CS',
+          value: 0,
+        },
+        {
+          label: 'UxW',
+          value: 2,
+        },
+        {
+          label: 'R:G',
+          value: 3,
+        },
+        {
+          label: 'u7y',
+          value: 4,
+        },
+        {
+          label: 'a11y',
+          value: 2,
+        },
+        {
+          label: 'FED',
+          value: 2,
+        },
+      ],
+    },
+    {
+      name: 'Alex',
+      excludeFromAggregate: true,
       values: [
         {
           label: 'IxD',
@@ -17,11 +68,11 @@ let data = {
         },
         {
           label: 'FED',
-          value: 2,
+          value: 3,
         },
         {
           label: 'R:E',
-          value: 2,
+          value: 3,
         },
         {
           label: 'UI',
@@ -29,23 +80,23 @@ let data = {
         },
         {
           label: 'AX',
-          value: 4,
+          value: 3,
         },
         {
           label: 'IA',
-          value: 1,
+          value: 3,
         },
         {
           label: 'CS',
-          value: 0,
-        },
-        {
-          label: 'UxW',
           value: 2,
         },
         {
+          label: 'UxW',
+          value: 3,
+        },
+        {
           label: 'R:G',
-          value: 1,
+          value: 3,
         },
         {
           label: 'u7y',
@@ -54,28 +105,28 @@ let data = {
 
         {
           label: 'a11y',
-          value: 0,
+          value: 2,
         },
       ],
     },
     {
-      name: 'Brian',
+      name: 'Becca',
       values: [
         {
           label: 'IxD',
-          value: 1,
+          value: 2,
         },
         {
           label: 'R:E',
-          value: 1,
+          value: 2,
         },
         {
           label: 'UI',
-          value: 4,
+          value: 2,
         },
         {
           label: 'AX',
-          value: 1,
+          value: 0,
         },
         {
           label: 'IA',
@@ -83,7 +134,7 @@ let data = {
         },
         {
           label: 'CS',
-          value: 1,
+          value: 0,
         },
         {
           label: 'UxW',
@@ -91,64 +142,20 @@ let data = {
         },
         {
           label: 'R:G',
-          value: 1,
+          value: 2,
         },
         {
           label: 'u7y',
-          value: 1,
+          value: 2,
         },
 
         {
           label: 'a11y',
-          value: 1,
-        },
-      ],
-    },
-    {
-      name: 'Chris the Usability Specialist',
-      values: [
-        {
-          label: 'IxD',
           value: 0,
         },
-        {
-          label: 'R:E',
-          value: 3,
-        },
-        {
-          label: 'UI',
-          value: 1,
-        },
-        {
-          label: 'AX',
-          value: 3,
-        },
-        {
-          label: 'IA',
-          value: 2,
-        },
-        {
-          label: 'CS',
-          value: 1,
-        },
-        {
-          label: 'UxW',
-          value: 1,
-        },
-        {
-          label: 'R:G',
-          value: 2,
-        },
-        {
-          label: 'u7y',
-          value: 4,
-        },
-        {
-          label: 'a11y',
-          value: 3,
-        },
       ],
     },
+
   ],
 };
 
@@ -164,22 +171,26 @@ class ProfileGraph {
   }
 
   setupCanvas(parent) {
-    let canvas = document.createElement('canvas');
-    (parent || document).appendChild(canvas);
+    this.canvas = document.createElement('canvas');
+    (parent || document).appendChild(this.canvas);
 
     // Get the device pixel ratio, falling back to 1.
     var dpr = window.devicePixelRatio || 1;
     // Get the size of the canvas in CSS pixels.
-    var rect = canvas.getBoundingClientRect();
+    var rect = this.canvas.getBoundingClientRect();
     // Give the canvas pixel dimensions of their CSS
     // size * the device pixel ratio.
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    var ctx = canvas.getContext('2d');
+    this.canvas.width = rect.width * dpr;
+    this.canvas.height = rect.height * dpr;
+    var ctx = this.canvas.getContext('2d');
     // Scale all drawing operations by the dpr, so you
     // don't have to worry about the difference.
     ctx.scale(dpr, dpr);
     return ctx;
+  }
+
+  titleCanvas(title) {
+    this.canvas.setAttribute('title', title);
   }
 
   drawChartPolygon(_vals) {
@@ -322,7 +333,9 @@ function draw(parent) {
   var maximums = {};
   var temp = [];
   for (var n = 0, len = data.profiles.length; n < len; n++) {
-    temp = [...temp, ...data.profiles[n].values];
+    if (!!!data.profiles[n].excludeFromAggregate) {
+      temp = [...temp, ...data.profiles[n].values];
+    }
   }
   temp.forEach(function(i) {
     if (maximums[i.label] !== undefined) {
@@ -343,6 +356,7 @@ function draw(parent) {
 
   // Draw lines out from the center
   pg.drawChartDimensionValues(consolidatedProfile);
+  pg.titleCanvas('Everyone');
 
   // Draw each of the profiles separately.
   for (var n = 0, len = data.profiles.length; n < len; n++) {
@@ -361,6 +375,7 @@ function draw(parent) {
   
     // Draw lines out from the center
     pgi.drawChartDimensionValues(data.profiles[n].values);
+    pgi.titleCanvas(data.profiles[n].name);
   }
 }
 
