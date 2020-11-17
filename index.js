@@ -9,7 +9,7 @@ let data = {
   },
   profiles: [
     {
-      name: 'Target',
+      name: 'Team target',
       excludeFromAggregate: true,
       values: [
         {
@@ -26,7 +26,7 @@ let data = {
         },
         {
           label: 'AX',
-          value: 1,
+          value: 2,
         },
         {
           label: 'IA',
@@ -38,7 +38,7 @@ let data = {
         },
         {
           label: 'UxW',
-          value: 2,
+          value: 3,
         },
         {
           label: 'R:G',
@@ -58,6 +58,10 @@ let data = {
         },
       ],
     },
+  ],
+};
+let altData = {
+  profiles: [
     {
       name: 'Alex',
       excludeFromAggregate: false,
@@ -110,23 +114,24 @@ let data = {
       ],
     },
     {
-      name: 'Becca',
+      name: 'Template',
+      excludeFromAggregate: true,
       values: [
         {
           label: 'IxD',
-          value: 2,
+          value: 1,
         },
         {
           label: 'R:E',
-          value: 2,
+          value: 1,
         },
         {
           label: 'UI',
-          value: 2,
+          value: 1,
         },
         {
           label: 'AX',
-          value: 0,
+          value: 1,
         },
         {
           label: 'IA',
@@ -134,7 +139,7 @@ let data = {
         },
         {
           label: 'CS',
-          value: 0,
+          value: 1,
         },
         {
           label: 'UxW',
@@ -142,22 +147,26 @@ let data = {
         },
         {
           label: 'R:G',
-          value: 2,
+          value: 1,
         },
         {
           label: 'u7y',
-          value: 2,
+          value: 1,
         },
-
         {
           label: 'a11y',
-          value: 0,
+          value: 1,
+        },
+        {
+          label: 'FED',
+          value: 1,
         },
       ],
     },
-
   ],
 };
+
+const includeAggregate = false;
 
 class ProfileGraph {
   constructor(dimensions, center, range, parent) {
@@ -186,7 +195,7 @@ class ProfileGraph {
     // Scale all drawing operations by the dpr, so you
     // don't have to worry about the difference.
     ctx.scale(dpr, dpr);
-    ctx.fillStyle = "rgb(255, 255, 255)";
+    ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     return ctx;
   }
@@ -239,13 +248,40 @@ class ProfileGraph {
       }
     }
     this.ctx.closePath();
-    this.ctx.fillStyle = "rgb(128, 255, 149)"
+    this.ctx.fillStyle = 'rgb(128, 255, 149)';
     this.ctx.fill();
 
     // this.ctx.lineJoin = "round";
     // this.ctx.strokeStyle = "rgb(0, 255, 0)";
     // this.ctx.lineWidth = 4;
     // this.ctx.stroke();
+  }
+
+  drawChartGridlines() {
+    // Draw the gridlines
+    let _ctx = this.ctx;
+    let self = this;
+
+    _ctx.lineJoin = 'round';
+    _ctx.strokeStyle = 'rgb(236,236,236)';
+    _ctx.lineWidth = 2;
+    _ctx.setLineDash([2, 4]);
+
+    for (var i = this.range.min, max = this.range.max; i <= max; i++) {
+      _ctx.beginPath();
+      this.dimensions.forEach(function (d, index) {
+        var pt = self.calcChartPointForDimension(40, i, d);
+        if (index == 0) {
+          _ctx.moveTo(self.center.x + pt.x, self.center.y + pt.y);
+        } else {
+          _ctx.lineTo(self.center.x + pt.x, self.center.y + pt.y);
+        }
+      });
+      _ctx.closePath();
+      _ctx.stroke();
+    }
+    // Clear the dashed line effect
+    _ctx.setLineDash([]);
   }
 
   drawChartDimensionValues(vals) {
@@ -256,18 +292,12 @@ class ProfileGraph {
         vals[i].value,
         vals[i].label
       );
-      this.ctx.moveTo(
-        this.center.x,
-        this.center.y
-      );
-      this.ctx.lineTo(
-        this.center.x + pt.x,
-        this.center.y + pt.y
-      );
+      this.ctx.moveTo(this.center.x, this.center.y);
+      this.ctx.lineTo(this.center.x + pt.x, this.center.y + pt.y);
     }
     this.ctx.lineWidth = 2;
-    this.ctx.strokeStyle = "rgb(0,0,0)";
-    this.ctx.stroke()
+    this.ctx.strokeStyle = 'rgb(0,0,0)';
+    this.ctx.stroke();
   }
 
   calcChartPointForDimension(magnitude, value, label) {
@@ -290,8 +320,12 @@ class ProfileGraph {
   }
 
   drawDimensions() {
-
     let n = this.dimensions.length;
+
+    this.ctx.lineWidth = 2;
+    this.ctx.setLineDash([2, 4]);
+    this.ctx.strokeStyle = 'rgb(236,236,236)';
+
     for (var i = 0; i < n; i++) {
       var pt = this.calcChartPointForDimension(
         40,
@@ -301,9 +335,6 @@ class ProfileGraph {
 
       this.ctx.moveTo(this.center.x, this.center.y);
       this.ctx.lineTo(this.center.x + pt.x, this.center.y + pt.y);
-
-      this.ctx.lineWidth = 2;
-      this.ctx.strokeStyle = 'rgb(236,236,236)';
       this.ctx.stroke();
 
       var pos = this.getLabelPosition(this.dimensions[i]);
@@ -315,51 +346,57 @@ class ProfileGraph {
         this.center.y + pos.y
       );
     }
+    // Clear the dashed line style
+    this.ctx.setLineDash([]);
   }
 }
 
 function draw(parent) {
-  let w = 400, h = 400;
+  let w = 400,
+    h = 400;
 
-  /**
-   * Draw the BLENDED version that merges all profiles
-   */
-  let pg = new ProfileGraph(
-    data.meta.dimensions,
-    { x: w / 2, y: h / 2 },
-    data.range,
-    parent
-  );
+  if (includeAggregate) {
+    /**
+     * Draw the BLENDED version that merges all profiles
+     */
+    let pg = new ProfileGraph(
+      data.meta.dimensions,
+      { x: w / 2, y: h / 2 },
+      data.range,
+      parent
+    );
 
-  // Create a consolidated dataset.
-  var consolidatedProfile = [];
-  var maximums = {};
-  var temp = [];
-  for (var n = 0, len = data.profiles.length; n < len; n++) {
-    if (!!!data.profiles[n].excludeFromAggregate) {
-      temp = [...temp, ...data.profiles[n].values];
+    // Create a consolidated dataset.
+    var consolidatedProfile = [];
+    var maximums = {};
+    var temp = [];
+    for (var n = 0, len = data.profiles.length; n < len; n++) {
+      if (!!!data.profiles[n].excludeFromAggregate) {
+        temp = [...temp, ...data.profiles[n].values];
+      }
     }
+    temp.forEach(function (i) {
+      if (maximums[i.label] !== undefined) {
+        maximums[i.label] = Math.max(maximums[i.label], i.value);
+      } else {
+        maximums[i.label] = i.value;
+      }
+    });
+    for (var prop in maximums) {
+      consolidatedProfile.push({ label: prop, value: maximums[prop] });
+    }
+
+    // Draw and label lines out from the center as the base
+    pg.drawDimensions();
+    pg.drawChartGridlines();
+
+    // Describe the look of the polygon
+    pg.drawChartPolygon(consolidatedProfile);
+
+    // Draw lines out from the center
+    pg.drawChartDimensionValues(consolidatedProfile);
+    pg.titleCanvas('Everyone');
   }
-  temp.forEach(function(i) {
-    if (maximums[i.label] !== undefined) {
-      maximums[i.label] = Math.max(maximums[i.label], i.value);
-    } else {
-      maximums[i.label] = i.value;
-    }
-  })
-  for (var prop in maximums) {
-    consolidatedProfile.push({ label: prop, value: maximums[prop]});
-  } 
-
-  // Draw and label lines out from the center as the base
-  pg.drawDimensions();
-
-  // Describe the look of the polygon
-  pg.drawChartPolygon(consolidatedProfile);
-
-  // Draw lines out from the center
-  pg.drawChartDimensionValues(consolidatedProfile);
-  pg.titleCanvas('Everyone');
 
   // Draw each of the profiles separately.
   for (var n = 0, len = data.profiles.length; n < len; n++) {
@@ -369,13 +406,14 @@ function draw(parent) {
       data.range,
       parent
     );
-  
+
     // Draw and label lines out from the center as the base
     pgi.drawDimensions();
+    pgi.drawChartGridlines();
 
     // Draw the profile polygon
     pgi.drawChartPolygon(data.profiles[n].values);
-  
+
     // Draw lines out from the center
     pgi.drawChartDimensionValues(data.profiles[n].values);
     pgi.titleCanvas(data.profiles[n].name);
